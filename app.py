@@ -12,12 +12,12 @@ st.markdown(
     <style>
     /* Main background */
     .stApp {
-        background: linear-gradient(to right, #e0c3fc, #8ec5fc);
+        background: linear-gradient(to right, #a158e8, #80b7ed);
     }
 
     /* Sidebar background */
     section[data-testid="stSidebar"] {
-        background: linear-gradient(to bottom, #d8b4fe, #c084fc);
+        background: linear-gradient(to bottom, #7d39c4, #c084fc);
     }
 
     /* Dropdown and text color */

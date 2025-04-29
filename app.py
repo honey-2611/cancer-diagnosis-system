@@ -12,7 +12,7 @@ st.markdown(
     <style>
     /* Main background */
     .stApp {
-        background: linear-gradient(to right, #a158e8, #80b7ed);
+        background: linear-gradient(to right, #b171f0, #953bed);
     }
 
     /* Sidebar background */
@@ -41,16 +41,16 @@ st.markdown(
 
 # Sidebar
 with st.sidebar:
-    st.markdown("<h4 style='color:white;'>Select Cancer Type</h4>", unsafe_allow_html=True)
+    st.markdown("<h4 style='color:#121112;'>Select Cancer Type</h4>", unsafe_allow_html=True)
     cancer_type = st.selectbox("", ["Breast Cancer", "Lung Cancer", "Skin Cancer"])
 
     st.markdown("""
-    <h4 style='color:white;'>About Project 🎗️</h4>
-    <p style='color:white;'>
+    <h4 style='color:#121112;'>About Project 🎗️</h4>
+    <p style='color:#121112;'>
     This system helps detect Breast, Lung, and Skin cancers early using Machine Learning.
     <br><br>
     Made with 💖 by<br>
-    <span style='color:white;'>Honey Panchal,<br>
+    <span style='color:#121112;'>Honey Panchal,<br>
     Jaymin Patel,<br>
     Dhruv Patel.</span>
     </p>
@@ -123,9 +123,9 @@ def get_input_fields(cancer_type):
 
 # Main content
 st.markdown(f"""
-    <h1 style='color:white;'>🎗️ Multi-Cancer Diagnosis System 🎗️</h1>
-    <h3 style='color:#66ffb2;'>🌸 Early Detection Saves Lives 🌸</h3>
-    <h2 style='color:white;'>Enter {cancer_type} Patient Details 👩‍⚕️👨‍⚕️</h2>
+    <h1 style='color:#121112;'>🎗️ Multi-Cancer Diagnosis System 🎗️</h1>
+    <h3 style='color:#db09b8;'>🌸 Early Detection Saves Lives 🌸</h3>
+    <h2 style='color:#121112;'>Enter {cancer_type} Patient Details 👩‍⚕️👨‍⚕️</h2>
 """, unsafe_allow_html=True)
 
 features = get_input_fields(cancer_type)

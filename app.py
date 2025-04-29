@@ -17,7 +17,7 @@ st.markdown(
 
     /* Sidebar background */
     section[data-testid="stSidebar"] {
-        background: linear-gradient(to bottom, #7d39c4, #c084fc);
+        background: linear-gradient(to bottom, #b8b3fc, #9892e8);
     }
 
     /* Dropdown and text color */
@@ -50,9 +50,9 @@ with st.sidebar:
     This system helps detect Breast, Lung, and Skin cancers early using Machine Learning.
     <br><br>
     Made with 💖 by<br>
-    <span style='color:#121112;'>Honey Panchal,<br>
+    <h4 span style='color:#121112;'>Honey Panchal,<br>
     Jaymin Patel,<br>
-    Dhruv Patel.</span>
+    Dhruv Patel.</span></h4>
     </p>
     """, unsafe_allow_html=True)
 
@@ -124,7 +124,7 @@ def get_input_fields(cancer_type):
 # Main content
 st.markdown(f"""
     <h1 style='color:#121112;'>🎗️ Multi-Cancer Diagnosis System 🎗️</h1>
-    <h3 style='color:#db09b8;'>🌸 Early Detection Saves Lives 🌸</h3>
+    <h3 style='color:#efebf2;'>🌸 Early Detection Saves Lives 🌸</h3>
     <h2 style='color:#121112;'>Enter {cancer_type} Patient Details 👩‍⚕️👨‍⚕️</h2>
 """, unsafe_allow_html=True)
 

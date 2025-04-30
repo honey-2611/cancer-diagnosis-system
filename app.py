@@ -1,138 +1,175 @@
+# app.py
 import streamlit as st
-import numpy as np
 import joblib
+import numpy as np
+from fpdf import FPDF
 import os
 
-# Set page configuration
-st.set_page_config(page_title="Multi-Cancer Diagnosis System", layout="wide")
+# ------------------ Page Configuration ------------------
+st.set_page_config(page_title="Multi-Cancer Diagnosis System",
+                   layout="wide")
 
-# Inject custom CSS for background and styling
+
 st.markdown(
     """
     <style>
-    /* Main background */
-    .stApp {
-        background: linear-gradient(to right, #b171f0, #953bed);
+    .stMain { !important;
+        background: #6242c2 !important;
+        color: #e6ff26 !important;
     }
-
-    /* Sidebar background */
-    section[data-testid="stSidebar"] {
-        background: linear-gradient(to bottom, #b8b3fc, #9892e8);
+    .stAppHeader{
+        background: black !important;
+        color:#29d923 !important;
     }
-
-    /* Dropdown and text color */
-    .stSelectbox > div[data-baseweb="select"] > div {
-        color: white !important;
+    section[data-testid="stSidebar"] { 
+        background: #dfe6aa !important;  
+        color: red !important;
     }
-
-    /* Label text color */
-    label, .st-bb, .st-c3 {
-        color: yellow !important;
-        font-weight: 600;
+    .stMarkdownContainer p{
+    color: red !important;
     }
-
-    /* Share menu and top bar */
-    header { color: #39FF14 !important; }
-
     </style>
     """,
     unsafe_allow_html=True
 )
 
-# Sidebar
-with st.sidebar:
-    st.markdown("<h4 style='color:#121112;'>Select Cancer Type</h4>", unsafe_allow_html=True)
-    cancer_type = st.selectbox("", ["Breast Cancer", "Lung Cancer", "Skin Cancer"])
+# ------------------ Custom CSS Styling ------------------
+st.markdown("""
+    <style>
+        body {
+            background: linear-gradient(to right, #e0b3ff, #c299ff);
+        }
+        section.main > div {
+            background: linear-gradient(to right, #e0b3ff, #c299ff);
+            color: black;
+        }
+        .stSelectbox div div div span {
+            color: blue !important;
+        }
+        .stButton>button {
+            color: white !important;
+            background-color: #6a0dad;
+            border-radius: 12px;
+            padding: 10px 24px;
+        }
+    </style>
+""", unsafe_allow_html=True)
 
-    st.markdown("""
-    <h4 style='color:#121112;'>About Project 🎗️</h4>
-    <p style='color:#121112;'>
-    This system helps detect Breast, Lung, and Skin cancers early using Machine Learning.
-    <br><br>
-    Made with 💖 by<br>
-    <h4 span style='color:#121112;'>Honey Panchal,<br>
-    Jaymin Patel,<br>
-    Dhruv Patel.</span></h4>
-    </p>
-    """, unsafe_allow_html=True)
+# ------------------ Sidebar ------------------
+st.sidebar.markdown("""
+    <h3 style='color:black;'>Select Cancer Type</h3>
+""", unsafe_allow_html=True)
 
-# Function to load model
-@st.cache_data
+cancer_type = st.sidebar.selectbox("", ["Breast Cancer", "Lung Cancer", "Skin Cancer"])
 
+st.sidebar.markdown("""
+    <h4 style='color:black;'>About Project 🎗️</h4>
+    <p style='color:black;'>This system helps detect Breast, Lung, and Skin cancers early using Machine Learning.</p>
+    <p style='color:#ff2635;'>Made with love by <br>
+    <strong>Honey Panchal <br> 
+    Jaymin Patel <br>
+    Dhruv Patel </strong> </p>
+   
+""", unsafe_allow_html=True)
+
+# ------------------ Load Models ------------------
 def load_model(cancer_type):
-    model_paths = {
+    models = {
         "Breast Cancer": "models/breast_cancer_model.pkl",
         "Lung Cancer": "models/lung_cancer_model.pkl",
         "Skin Cancer": "models/skin_cancer_model.pkl"
     }
-    model_file = model_paths.get(cancer_type)
-    if model_file and os.path.exists(model_file):
-        return joblib.load(model_file)
-    else:
-        st.error(f"❌ Model file not found: {model_file}")
-        return None
+    return joblib.load(models[cancer_type])
 
-# Get feature input based on cancer type
-def get_input_fields(cancer_type):
+# ------------------ Seriousness Function ------------------
+def seriousness_level(prob):
+    if prob >= 0.85:
+        return "High"
+    elif prob >= 0.5:
+        return "Moderate"
+    else:
+        return "Low"
+
+# ------------------ PDF Generator ------------------
+def generate_pdf(cancer_type, inputs, result, probability, seriousness):
+    pdf = FPDF()
+    pdf.add_page()
+    pdf.set_font("Arial", size=14)
+    pdf.cell(200, 10, txt=f"{cancer_type} Diagnosis Report", ln=True, align='C')
+    pdf.ln(10)
+
+    for key, val in inputs.items():
+        pdf.cell(200, 10, txt=f"{key}: {val}", ln=True)
+    pdf.ln(5)
+    pdf.cell(200, 10, txt=f"Diagnosis Result: {result}", ln=True)
+    pdf.cell(200, 10, txt=f"Probability: {probability:.2f}", ln=True)
+    pdf.cell(200, 10, txt=f"Seriousness Level: {seriousness}", ln=True)
+
+    pdf_path = f"report_{cancer_type.replace(' ', '_')}.pdf"
+    pdf.output(pdf_path)
+    return pdf_path
+
+# ------------------ Input Forms ------------------
+def get_inputs(cancer_type):
+    inputs = {}
     if cancer_type == "Breast Cancer":
         features = [
-            "Radius Mean", "Texture Mean", "Perimeter Mean", "Area Mean", "Smoothness Mean",
-            "Compactness Mean", "Concavity Mean", "Concave Points Mean", "Symmetry Mean", "Fractal Dimension Mean",
-            "Radius SE", "Texture SE", "Perimeter SE", "Area SE", "Smoothness SE",
-            "Compactness SE", "Concavity SE", "Concave Points SE", "Symmetry SE", "Fractal Dimension SE",
-            "Radius Worst", "Texture Worst", "Perimeter Worst", "Area Worst", "Smoothness Worst",
-            "Compactness Worst", "Concavity Worst", "Concave Points Worst", "Symmetry Worst", "Fractal Dimension Worst"
-        ]
-        inputs = [st.number_input(label, min_value=0.0, step=0.01, format="%.2f") for label in features]
-        return np.array(inputs).reshape(1, -1)
+            'radius_mean', 'texture_mean', 'perimeter_mean', 'area_mean', 'smoothness_mean',
+            'compactness_mean', 'concavity_mean', 'concave_points_mean', 'symmetry_mean',
+            'fractal_dimension_mean', 'radius_se', 'texture_se', 'perimeter_se', 'area_se',
+            'smoothness_se', 'compactness_se', 'concavity_se', 'concave_points_se',
+            'symmetry_se', 'fractal_dimension_se', 'radius_worst', 'texture_worst',
+            'perimeter_worst', 'area_worst', 'smoothness_worst', 'compactness_worst',
+            'concavity_worst', 'concave_points_worst', 'symmetry_worst',
+            'fractal_dimension_worst']
+        for feature in features:
+            inputs[feature] = st.number_input(f"{feature.replace('_', ' ').title()}", min_value=0.0, value=0.0)
 
     elif cancer_type == "Lung Cancer":
-        fields = [
-            ("Gender", ["Male", "Female"]),
-            ("Smoking", ["Yes", "No"]),
-            ("Yellow Fingers", ["Yes", "No"]),
-            ("Anxiety", ["Yes", "No"]),
-            ("Peer Pressure", ["Yes", "No"]),
-            ("Chronic Disease", ["Yes", "No"]),
-            ("Fatigue", ["Yes", "No"]),
-            ("Allergy", ["Yes", "No"]),
-            ("Wheezing", ["Yes", "No"]),
-            ("Alcohol Consuming", ["Yes", "No"]),
-            ("Coughing", ["Yes", "No"]),
-            ("Shortness of Breath", ["Yes", "No"]),
-            ("Swallowing Difficulty", ["Yes", "No"]),
-            ("Chest Pain", ["Yes", "No"]),
-            ("Age", list(range(1, 101)))
-        ]
-        input_values = []
-        for label, options in fields:
-            if options[0] in ["Yes", "No"]:
-                val = st.selectbox(label, options)
-                input_values.append(1 if val == "Yes" else 2)
-            elif label == "Gender":
-                val = st.selectbox(label, options)
-                input_values.append(1 if val == "Male" else 0)
-            else:
-                val = st.selectbox(label, options)
-                input_values.append(val)
-        return np.array(input_values).reshape(1, -1)
+        options = ["Gender", "Smoking", "Yellow Fingers", "Anxiety", "Peer Pressure", "Chronic Disease", "Fatigue", "Allergy", "Wheezing", "Alcohol Consuming", "Coughing", "Shortness of Breath", "Swallowing Difficulty", "Chest Pain", "Lung cancer"]
+        for opt in options:
+            inputs[opt] = st.selectbox(f"{opt}", ["Yes", "No"])
 
     elif cancer_type == "Skin Cancer":
-        fields = ["Age", "Itching", "Irritation", "Ulcer", "Bleeding", "Swelling", "Pain"]
-        return np.array([st.number_input(field, min_value=0.0, step=1.0) for field in fields]).reshape(1, -1)
+        options = ["Gender", "Itching", "Ulcers", "Bleeding", "Elevation", "Age"]
+        for opt in options:
+            if opt == "Age":
+                inputs[opt] = st.slider("Age", min_value=1, max_value=100, value=25)
+            else:
+                inputs[opt] = st.selectbox(f"{opt}", ["Yes", "No"])
+    return inputs
 
-# Main content
-st.markdown(f"""
-    <h1 style='color:#121112;'>🎗️ Multi-Cancer Diagnosis System 🎗️</h1>
-    <h3 style='color:#efebf2;'>🌸 Early Detection Saves Lives 🌸</h3>
-    <h2 style='color:#121112;'>Enter {cancer_type} Patient Details 👩‍⚕️👨‍⚕️</h2>
-""", unsafe_allow_html=True)
+# ------------------ Prediction ------------------
+def preprocess_inputs(inputs, cancer_type):
+    processed = []
+    for val in inputs.values():
+        if isinstance(val, str):
+            processed.append(1 if val == "Yes" else 0)
+        else:
+            processed.append(val)
+    return np.array(processed).reshape(1, -1)
 
-features = get_input_fields(cancer_type)
-model = load_model(cancer_type)
+# ------------------ Main ------------------
+st.title("🎗️ Multi-Cancer Diagnosis System 🎗️")
+st.markdown("<h3 style='color:#edc9f0;'>💗Early Detection Saves Lives</h3>", unsafe_allow_html=True)
 
-if st.button("Diagnose Now", key="diagnose_btn"):
-    if model is not None:
-        prediction = model.predict(features)[0]
-        result = "🎉 No Cancer Detected!" if prediction == 0 else "⚠️ Cancer Detected - Please consult a doctor!"
-        st.success(result)
+inputs = get_inputs(cancer_type)
+
+if st.button("🔎 Diagnose Now"):
+    model = load_model(cancer_type)
+    features = preprocess_inputs(inputs, cancer_type)
+    prediction = model.predict(features)[0]
+    probability = model.predict_proba(features)[0][1]
+    result = "Positive" if prediction == 1 else "Negative"
+    seriousness = seriousness_level(probability)
+
+    st.success(f"Diagnosis Result: {result}")
+    st.info(f"Probability: {probability:.2f}")
+    st.warning(f"Seriousness Level: {seriousness}")
+
+    # Generate and download PDF
+    pdf_path = generate_pdf(cancer_type, inputs, result, probability, seriousness)
+    with open(pdf_path, "rb") as f:
+        st.download_button("📄 Download Report as PDF", f, file_name=pdf_path)
+
+    os.remove(pdf_path)

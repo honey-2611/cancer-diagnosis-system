@@ -1,0 +1,175 @@
+# app.py
+import streamlit as st
+import joblib
+import numpy as np
+from fpdf import FPDF
+from io import BytesIO
+
+# ------------------ Page Configuration ------------------
+st.set_page_config(page_title="Multi-Cancer Diagnosis System", layout="wide")
+
+# ------------------ Custom CSS ------------------
+st.markdown("""
+    <style>
+        .stMain { background: #6242c2 !important; color: #e6ff26 !important; }
+        section[data-testid="stSidebar"] { background: #dfe6aa !important; color: red !important; }
+        .stMarkdownContainer p { color: red !important; }
+        body {
+            background: linear-gradient(to right, #e0b3ff, #c299ff);
+        }
+        section.main > div {
+            background: linear-gradient(to right, #e0b3ff, #c299ff);
+            color: black;
+        }
+        .stSelectbox div div div span { color: blue !important; }
+        .stButton>button {
+            color: white !important;
+            background-color: #6a0dad;
+            border-radius: 12px;
+            padding: 10px 24px;
+        }
+    </style>
+""", unsafe_allow_html=True)
+
+# ------------------ Sidebar ------------------
+st.sidebar.markdown("<h3 style='color:black;'>Select Cancer Type</h3>", unsafe_allow_html=True)
+cancer_type = st.sidebar.selectbox("", ["Breast Cancer", "Lung Cancer", "Skin Cancer"])
+
+st.sidebar.markdown("""
+    <h4 style='color:black;'>About Project 🎗</h4>
+    <p style='color:black;'>This system helps detect Breast, Lung, and Skin cancers early using Machine Learning.</p>
+    <p style='color:#ff2635;'>Made with ❤ by <br>
+    <strong>Honey Panchal <br> 
+    Jaymin Patel <br>
+    Dhruv Patel </strong> </p>
+""", unsafe_allow_html=True)
+
+# ------------------ Load Model and Scaler ------------------
+def load_model_and_scaler(cancer_type):
+    model_paths = {
+        "Breast Cancer": ("models/breast_cancer_model.pkl", "models/breast_cancer_scaler.pkl"),
+        "Lung Cancer": ("models/lung_cancer_model.pkl", None),
+        "Skin Cancer": ("models/skin_cancer_model.pkl", None)
+    }
+    model_path, scaler_path = model_paths[cancer_type]
+    model = joblib.load(model_path)
+    scaler = joblib.load(scaler_path) if scaler_path else None
+    return model, scaler
+
+# ------------------ Seriousness Level ------------------
+def seriousness_level(prob):
+    if prob >= 0.85:
+        return "High"
+    elif prob >= 0.5:
+        return "Moderate"
+    else:
+        return "Low"
+
+# ------------------ PDF Generator ------------------
+def generate_pdf(cancer_type, inputs, result, probability, seriousness):
+    pdf = FPDF()
+    pdf.add_page()
+    pdf.set_font("Arial", size=14)
+    pdf.cell(200, 10, txt=f"{cancer_type} Diagnosis Report", ln=True, align='C')
+    pdf.ln(10)
+
+    for key, val in inputs.items():
+        pdf.cell(200, 10, txt=f"{key}: {val}", ln=True)
+    pdf.ln(5)
+    pdf.cell(200, 10, txt=f"Diagnosis Result: {result}", ln=True)
+    pdf.cell(200, 10, txt=f"Probability: {probability:.2f}", ln=True)
+    pdf.cell(200, 10, txt=f"Seriousness Level: {seriousness}", ln=True)
+
+    pdf_output = BytesIO()
+    pdf.output(pdf_output)
+    pdf_output.seek(0)
+    return pdf_output
+
+# ------------------ Input Forms ------------------
+def get_inputs(cancer_type):
+    inputs = {}
+    if cancer_type == "Breast Cancer":
+        features = [
+            'radius_mean', 'texture_mean', 'perimeter_mean', 'area_mean', 'smoothness_mean',
+            'compactness_mean', 'concavity_mean', 'concave_points_mean', 'symmetry_mean',
+            'fractal_dimension_mean', 'radius_se', 'texture_se', 'perimeter_se', 'area_se',
+            'smoothness_se', 'compactness_se', 'concavity_se', 'concave_points_se',
+            'symmetry_se', 'fractal_dimension_se', 'radius_worst', 'texture_worst',
+            'perimeter_worst', 'area_worst', 'smoothness_worst', 'compactness_worst',
+            'concavity_worst', 'concave_points_worst', 'symmetry_worst',
+            'fractal_dimension_worst']
+        for feature in features:
+            inputs[feature] = st.number_input(f"{feature.replace('_', ' ').title()}", min_value=0.0, value=0.0)
+
+    elif cancer_type == "Lung Cancer":
+        options = ["Gender", "Smoking", "Yellow Fingers", "Anxiety", "Peer Pressure", "Chronic Disease",
+                   "Fatigue", "Allergy", "Wheezing", "Alcohol Consuming", "Coughing", "Shortness of Breath",
+                   "Swallowing Difficulty", "Chest Pain"]
+        for opt in options:
+            if opt == "Gender":
+                inputs[opt] = st.selectbox(f"{opt}", ["Male", "Female"])  # Removed "Other"
+            else:
+                inputs[opt] = st.selectbox(f"{opt}", ["Yes", "No"])
+
+    elif cancer_type == "Skin Cancer":
+        options = ["Gender", "Itching", "Ulcers", "Bleeding", "Elevation", "Age"]
+        for opt in options:
+            if opt == "Age":
+                inputs[opt] = st.slider("Age", min_value=1, max_value=100, value=25)
+            elif opt == "Gender":
+                inputs[opt] = st.selectbox(f"{opt}", ["Male", "Female"])  # Removed "Other"
+            else:
+                inputs[opt] = st.selectbox(f"{opt}", ["Yes", "No"])
+    return inputs
+
+# ------------------ Preprocess Inputs ------------------
+def preprocess_inputs(inputs, cancer_type):
+    processed = []
+    for val in inputs.values():
+        if isinstance(val, str):
+            if cancer_type == "Breast Cancer":
+                processed.append(float(val))
+            else:
+                # Convert categorical features to numerical
+                if val == "Yes":
+                    processed.append(1)
+                elif val == "Male":
+                    processed.append(1)
+                elif val == "Female":
+                    processed.append(0)
+                else:
+                    processed.append(0)
+        else:
+            processed.append(val)
+    return np.array(processed).reshape(1, -1)
+
+# ------------------ Main UI ------------------
+st.title("🎗 Multi-Cancer Diagnosis System 🎗")
+st.markdown("<h3 style='color:#edc9f0;'>💗 Early Detection Saves Lives</h3>", unsafe_allow_html=True)
+
+inputs = get_inputs(cancer_type)
+
+if st.button("🔎 Diagnose Now"):
+    try:
+        model, scaler = load_model_and_scaler(cancer_type)
+        features = preprocess_inputs(inputs, cancer_type)
+        
+        # Apply scaler if available
+        if scaler is not None:
+            features = scaler.transform(features)
+        
+        prediction = model.predict(features)[0]
+        probability = model.predict_proba(features)[0][1]
+        result = "Positive" if prediction == 1 else "Negative"
+        seriousness = seriousness_level(probability)
+
+        st.success(f"Diagnosis Result: {result}")
+        st.info(f"Probability: {probability:.2f}")
+        st.warning(f"Seriousness Level: {seriousness}")
+
+        pdf_data = generate_pdf(cancer_type, inputs, result, probability, seriousness)
+        st.download_button("📄 Download Report as PDF", pdf_data,
+                           file_name=f"{cancer_type.replace(' ', '_')}_report.pdf")
+
+    except Exception as e:
+        st.error(f"An error occurred: {e}")

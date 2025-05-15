@@ -1,0 +1,15 @@
+Basic App Layout Overview:
+
+---------------------------------------------------------
+| Sidebar:                                              |
+|  Select Cancer Type 🔽                                 |
+|  Visual Insights 📊 [Optional]                         |
+|  Download PDF Report 📑                                |
+---------------------------------------------------------
+| Main Area:                                             |
+|  Title + Welcome Message 🎗️                            |
+|  Dynamic Input Fields 📝                               |
+|  "Diagnose Now" Button 🚀                              |
+|  Diagnosis Result + Seriousness Level Display ✅        |
+|  Feature Importance Graphs (Optional) 📊               |
+---------------------------------------------------------

@@ -66,7 +66,7 @@ st.sidebar.markdown("""
     <h4 style='color:black;'>About Project 🎗️</h4>
     <p style='color:black;'>This system helps detect Breast, Lung, and Skin cancers early using Machine Learning.</p>
     <p style='color:#ff2635;'>Made with ❤️ by <br>
-    <strong>Honey Panchal <br> </strong> </p>
+    <strong> Dhruv Patel <br> </strong> </p>
    
 """, unsafe_allow_html=True)
 
